@@ -15,6 +15,12 @@
  * UN USUARIO LOGEADO NO PUEDE ACCEDER A ESTE SCRIPT.
  */
 
+/**********************************************************************************************************************
+ * Lógica del programa
+ * 
+ * Tareas a realizar:
+ * - TODO: tienes que realizar toda la lógica de este script
+ */
 session_start();
 
 // Si ya hay un usuario logueado, no debemos mostarle esto
@@ -23,38 +29,32 @@ if (isset($_SESSION['usuario'])) {
     exit();
 }
 
+// Pedimos el fichero con las funciones
 require 'lib/gestionUsuarios.php';
 
+// Si hay POST realizamos el logueo del usuario
 if ($_POST) {
-    $nombre = isset($_POST['nombre']) ? $_POST['nombre'] : '';
-    $clave = isset($_POST['clave']) ? $_POST['clave'] : '';
+    $nombre = isset($_POST['nombre']) ? htmlspecialchars(trim($_POST['nombre'])) : '';
+    $clave = isset($_POST['clave']) ? htmlspecialchars(trim($_POST['clave'])) : '';
 
     $esOk = loginUsuario($nombre, $clave);
     if ($esOk) {
-        $_SESSION['nombre'] = $nombre;
-        header('location: index.php');
+        $_SESSION['usuario'] = $nombre;
+        header('Location: index.php');
         exit();
     }
 }
-
-
-/**********************************************************************************************************************
- * Lógica del programa
- * 
- * Tareas a realizar:
- * - TODO: tienes que realizar toda la lógica de este script
- */
-
  
 /*********************************************************************************************************************
  * Salida HTML
  * 
  * Tareas a realizar en la vista:
- * - TODO: añadir el menú.
- * - TODO: formulario con nombre de usuario y contraseña.
+ * - TODO: añadir el menú. OK
+ * - TODO: formulario con nombre de usuario y contraseña. OK
  */
 ?>
 
+<a href="./index.php">Volver a la página principal</a>
 <h1>Inicia sesión</h1>
 <form action="login.php" method="post">
     <p>

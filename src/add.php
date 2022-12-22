@@ -35,6 +35,98 @@
  * Tareas a realizar:
  * - TODO: tienes que desarrollar toda la lógica de este script.
  */
+session_start();
+
+// Si ya hay un usuario logueado, no debemos mostarle esto
+if (!isset($_SESSION['usuario'])) {
+    header('location:index.php');
+    exit();
+}
+
+require './lib/gestionUsuarios.php';
+$nombre = $_SESSION['usuario'];
+
+function añadirImagen(string $nombreI, string $ruta, int $usuario)
+{
+    // Conectamos a la base de datos
+    $mysqli = new mysqli("db", "dwes", "dwes", "dwes", 3306);
+    if ($mysqli -> connect_errno) {
+        echo "No ha sido posible conectarse a la base de datos";
+        exit();
+    }
+
+    // Preparamos la consulta
+    $resultado = $mysqli->prepare(
+        "insert into imagen(nombre, ruta, subido, usuario) value (?, ?, UNIX_TIMESTAMP(), ?);"
+    );
+    if ($resultado === false) {
+        echo "No se ha podido ";
+        echo $mysqli->error;
+        $mysqli->close();
+    }
+
+    //Vinculamos (bind)
+    $dato1 = $nombreI;
+    $dato2 = $ruta;
+    $dato3 = $usuario;
+    $vinculo = $resultado->bind_param('ssi', $dato1, $dato2, $dato3);
+    if (!$vinculo) {
+        echo 'Error al vincular: ' . $mysqli->error;
+        $resultado->close();
+        $mysqli->close();
+    }
+
+    //Ejecutamos
+    $ejecucion = $resultado->execute();
+    if (!$ejecucion) {
+        echo "Error al ejecutar la sentencia: " . $mysqli->error;
+        $resultado->close();
+        $mysqli->close();
+    }
+}
+
+if ($_POST) {
+    $fichero = $_FILES['imagen'];
+    $nombreInsert = htmlspecialchars(trim($_POST['nombre']));
+    $extension = pathinfo($fichero["name"], PATHINFO_EXTENSION);
+    $rutaInsert = "/imagenes/" . $nombreInsert . ".". $extension;
+    $usser = 2;
+    añadirImagen($nombreInsert, $rutaInsert, $usser);
+}
+
+
+function validarNombre()
+{
+  if ($_POST) {
+    $fichero = $_FILES['imagen'];
+    $nombreValidado = htmlspecialchars(trim($_POST['nombre']," "));
+    $patronTexto = "/^[0-9a-zA-ZáéíóúÁÉÍÓÚäëïöüÄËÏÖÜàèìòùÀÈÌÒÙ\s]+$/";
+    $extension = pathinfo($fichero["name"], PATHINFO_EXTENSION);
+
+    if (!empty($_POST)) {
+      if ($extension == "png" || $extension == "jpg" || $extension == "jpeg") {
+        if (isset($_POST['nombre']) && mb_strlen($_POST['nombre']) > 0) {
+          if (empty($_POST['nombre'])) {
+            echo "El nombre del fichero no puede estar vacío";
+          } else {
+            if (preg_match($patronTexto, $_POST['nombre'])) {
+              $nombreValidado = htmlspecialchars(trim($_POST['nombre']," "));
+              $rutaDestino = "imagenes/" . $nombreValidado . "." . $extension;
+                move_uploaded_file($_FILES['imagen']['tmp_name'], $rutaDestino);
+                echo "El fichero " . $nombreValidado . " se ha subido correctamente";
+            } else {
+                echo "¡El nombre sólo puede contener letras y espacios!";
+            }
+          }
+        } else {
+          echo "¡No se han especificado todos los campos requeridos!";
+        }
+      } else {
+        echo "El tipo de archivo no es compatible. Los ficheros han de ser .png, .jpg o .jpeg";
+      }
+    }
+  }
+}
 
 
 /*********************************************************************************************************************
@@ -48,17 +140,39 @@
  */
 ?>
 <h1>Galería de imágenes</h1>
+<?php
+if ($nombre == null) {
+    echo <<<END
+        <ul>
+            <li><a href="index.php">Home</a></li>
+            <li><a href="filter.php">Filtrar imágenes</a></li>
+            <li><a href="signup.php">Regístrate</a></li>
+            <li><a href="login.php">Iniciar Sesión</a></li>
+        </ul>
+        END;
+    } else {
+        echo <<<END
+        <ul>
+        <li><a href="index.php">Home</a></li>
+        <li><strong>Añadir imagen</strong></li>
+        <li><a href="filter.php">Filtrar imágenes</a></li>
+        <li><a href="logout.php">Cerrar sesión ($nombre)</a></li>
+        </ul>
+    END;
+}
+?>
 
 <form method="post" enctype="multipart/form-data">
     <p>
         <label for="nombre">Nombre</label>
-        <input type="text" name="nombre" id="nombre">
+        <input type="text" name="nombre" id="nombre" value="<?= $_POST ? $_POST['nombre'] : '' ?>">
     </p>
 
     <p>
         <label for="imagen">Imagen</label>
         <input type="file" name="imagen" id="imagen">
     </p>
+    <?php echo validarNombre(); ?>
 
     <p>
         <input type="submit" value="Añadir">

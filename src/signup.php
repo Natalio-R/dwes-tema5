@@ -47,6 +47,7 @@ if ($_POST) {
  *         correspondiente.
  */
 ?>
+<a href="./index.php">Volver a la página principal</a>
 <h1>Regístrate</h1>
 
 <?php if (!$_POST || ($_POST && $errores)) { ?>

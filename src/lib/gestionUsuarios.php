@@ -15,7 +15,7 @@ function existeUsuario(string $nombre): bool
     }
 
     $resultado = $mysqli->query(
-        "select usuario.nombre from usuario where usuario.nombre='$nombre'"
+        "select nombre from usuario where nombre like '$nombre'"
     );
 
     if (!$resultado) {
@@ -47,39 +47,37 @@ function getUsuario(string $nombre): array
     }
 
     $resultado = $mysqli->query(
-        "select usuario.nombre from usuario where usuario.nombre='$nombre'"
+        "select nombre, clave from usuario where nombre = '$nombre'"
     );
 
+    $row = [];
     if (!$resultado) {
-        return [];
-    }
- 
-    foreach ($resultado as $nombreRegistrado) {
-        if ($nombreRegistrado == $nombre) {
-            return ['nombre' => $nombreRegistrado, 'clave' => $nombreRegistrado];
-        }
+        echo "No se han obtenido datos";
+    } else {
+        $row = $resultado->fetch_assoc();
     }
     
     $resultado->free();
     $mysqli->close();
-    
-    return [];
+
+    return $row == null ? [] : $row;
 }
 
 /**
- * Inserta en el fichero de usuarios al usuario con la clave indicada.
+ * Inserta en la base de datos de usuarios al usuario con la clave indicada.
  */
 function insertUsuario(string $nombre, string $clave)
 {
-
     $mysqli = new mysqli("db", "dwes", "dwes", "dwes", 3306);
     if ($mysqli -> connect_errno) {
         echo "No ha sido posible conectarse a la base de datos";
         exit();
     }
 
+    $claveCifrada = password_hash($clave, PASSWORD_BCRYPT);
+
     $resultado = $mysqli->query(
-        "insert into usuario (nombre, clave) values ('$nombre', '$clave')"
+        "insert into usuario (nombre, clave) values ('$nombre', '$claveCifrada')"
     );
 
     if (!$resultado) {
@@ -98,7 +96,9 @@ function validaRegistro(string $nombre, string $clave, string $repiteClave): arr
 {
     $errores = [];
 
-    if (!ctype_alnum($nombre)) {
+    if (empty($nombre)) {
+        $errores['nombre'] = 'Debes introducir un nombre';
+    } else if (!ctype_alnum($nombre)) {
         $errores['nombre'] = 'El nombre de usuario solo puede contener caracteres alfanuméricos';
     } else if (existeUsuario($nombre)) {
         $errores['nombre'] = 'Nombre de usuario no disponible';
@@ -106,7 +106,7 @@ function validaRegistro(string $nombre, string $clave, string $repiteClave): arr
 
     if (strlen($clave) < 8) {
         $errores['clave'] = 'La contraseña debe ser de 8 caracteres como mínimo';
-    } else if ($clave !== $repiteClave) {
+    } else if ($clave != $repiteClave) {
         $errores['clave'] = 'Las contraseñas no coinciden';
     }
 
@@ -138,10 +138,12 @@ function registroUsuario(string $nombre, string $clave, string $repiteClave): ar
  * Devuelve true si existe un usuario con la clave indicada y false en caso
  * contrario.
  */
-function loginUsuario(string $nombre, string $clave): bool
+function loginUsuario(string $usuario, string $clave): bool
 {
-    $usuarioRegistrado = getUsuario($nombre);
-    if (!empty($usuarioRegistrado) && password_verify($clave, $usuarioRegistrado['clave'])) {
+    $usuarioRegistrado = getUsuario($usuario);
+    $hash = $usuarioRegistrado['clave'];
+
+    if (!empty($usuarioRegistrado) && password_verify($clave, $hash)) {
         return true;
     } else {
         return false;

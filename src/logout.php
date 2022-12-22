@@ -11,3 +11,7 @@
  * Tareas a realizar:
  * - TODO: tienes que realizar toda la lógica de este script
  */
+session_start();
+session_destroy();
+
+header('Location: index.php');

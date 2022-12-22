@@ -12,7 +12,9 @@ if ($mysqli->connect_errno) {
     exit();
 }
 
-$resultado = $mysqli->query("select i.id id, i.nombre nombre, i.ruta ruta, u.nombre usuario from imagen i, usuario u where i.usuario=u.id");
+$resultado = $mysqli->query(
+    "select i.id id, i.nombre nombre, i.ruta ruta, u.nombre usuario from imagen i, usuario u where i.usuario=u.id"
+);
 if (!$resultado) {
     echo "<p>Error fatal: " . $mysqli->error . "</p>";
     exit();
@@ -30,14 +32,14 @@ if ($usuario == null) {
             <li><a href="signup.php">Regístrate</a></li>
             <li><a href="login.php">Iniciar Sesión</a></li>
         </ul>
-    END;
-} else {
-    return <<<END
+        END;
+    } else {
+        echo <<<END
         <ul>
-            <li><strong>Home</strong></li>
-            <li><a href="add.php">Añadir imagen</a></li>
-            <li><a href="filter.php">Filtrar imágenes</a></li>
-            <li><a href="signup.php">Cerrar sesión ($usuario)</a></li>
+        <li><strong>Home</strong></li>
+        <li><a href="add.php">Añadir imagen</a></li>
+        <li><a href="filter.php">Filtrar imágenes</a></li>
+        <li><a href="logout.php">Cerrar sesión ($usuario)</a></li>
         </ul>
     END;
 }
